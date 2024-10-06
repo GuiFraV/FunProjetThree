@@ -4,6 +4,9 @@ import { useEffect } from "react";
 import * as THREE from "three";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
+import fontData from "../app/fonts/helvetiker_regular.typeface.json";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -14,10 +17,10 @@ const ThreeScene = () => {
 
     // Initialisation de la caméra
     const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
+      75, // Champ de vision
+      window.innerWidth / window.innerHeight, // Ratio
+      0.1, // Plan proche
+      1000 // Plan lointain
     );
     camera.position.z = 5;
 
@@ -42,6 +45,74 @@ const ThreeScene = () => {
     const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
+
+    // Charger la police directement importée
+    const fontLoader = new FontLoader();
+    const font = fontLoader.parse(fontData);
+
+    // Le texte à afficher
+    const textString = "Section 4";
+
+    // Créer un groupe pour les lettres
+    const textGroup = new THREE.Group();
+
+    // Rayon du cercle autour du cube
+    const radius = 3;
+
+    // Angle initial
+    const startAngle = 0;
+
+    // Angle entre chaque caractère
+    const angleIncrement = (Math.PI * 2) / textString.length;
+
+    // Créer les lettres individuelles
+    for (let i = 0; i < textString.length; i++) {
+      const char = textString[i];
+
+      // Créer la géométrie pour la lettre
+      const charGeometry = new TextGeometry(char, {
+        font: font,
+        size: 0.5,
+        height: 0.1,
+        curveSegments: 12,
+        bevelEnabled: false,
+      });
+
+      // Créer le matériau pour la lettre (noir)
+      const charMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+      // Créer le maillage pour la lettre
+      const charMesh = new THREE.Mesh(charGeometry, charMaterial);
+
+      // Calculer l'angle pour cette lettre
+      const angle = startAngle + i * angleIncrement;
+
+      // Calculer la position sur le cercle
+      const x = radius * Math.cos(angle);
+      const z = radius * Math.sin(angle);
+
+      charMesh.position.set(x, 0, z);
+
+      // Orienter la lettre vers le centre
+      charMesh.lookAt(0, 0, 0);
+
+      // Ajouter la lettre au groupe
+      textGroup.add(charMesh);
+    }
+
+    // Ajouter le groupe de texte à la scène
+    scene.add(textGroup);
+
+    // Animer la rotation du texte en fonction du scroll
+    gsap.to(textGroup.rotation, {
+      y: Math.PI * 2, // Rotation complète autour de l'axe Y
+      scrollTrigger: {
+        trigger: ".section-4", // Cible la section 4
+        start: "top center",
+        end: "bottom center",
+        scrub: true,
+      },
+    });
 
     // Fonction d'animation
     const animate = () => {
@@ -84,6 +155,7 @@ const ThreeScene = () => {
       // Supprimer les animations GSAP
       ScrollTrigger.getAll().forEach((t) => t.kill());
       gsap.killTweensOf(cube.rotation);
+      gsap.killTweensOf(textGroup.rotation);
     };
   }, []);
 
