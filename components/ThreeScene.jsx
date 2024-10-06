@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useEffect } from "react";
 import * as THREE from "three";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -8,8 +8,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 const ThreeScene = () => {
-  const mountRef = useRef(null);
-
   useEffect(() => {
     // Initialisation de la scène
     const scene = new THREE.Scene();
@@ -26,7 +24,18 @@ const ThreeScene = () => {
     // Initialisation du renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    mountRef.current.appendChild(renderer.domElement);
+
+    // Ajouter le renderer au body du document
+    document.body.appendChild(renderer.domElement);
+
+    // Style du renderer pour qu'il reste fixe et en arrière-plan
+    renderer.setClearColor(0x000000, 0); // Fond transparent
+    renderer.domElement.style.position = "fixed";
+    renderer.domElement.style.top = "0";
+    renderer.domElement.style.left = "0";
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
+    renderer.domElement.style.zIndex = "-1"; // Derrière le contenu
 
     // Créer la géométrie du cube
     const geometry = new THREE.BoxGeometry();
@@ -38,10 +47,6 @@ const ThreeScene = () => {
     const animate = () => {
       requestAnimationFrame(animate);
 
-      // Vous pouvez laisser cette rotation ou la commenter si vous voulez que le scroll contrôle entièrement la rotation
-      // cube.rotation.x += 0.01;
-      // cube.rotation.y += 0.01;
-
       renderer.render(scene, camera);
     };
 
@@ -49,10 +54,10 @@ const ThreeScene = () => {
 
     // Animer le cube en fonction du scroll
     gsap.to(cube.rotation, {
-      x: Math.PI * 2, // Rotation complète sur l'axe X
-      y: Math.PI * 2, // Rotation complète sur l'axe Y
+      x: Math.PI * 4, // Rotation sur X
+      y: Math.PI * 4, // Rotation sur Y
       scrollTrigger: {
-        trigger: mountRef.current,
+        trigger: document.body, // Déclencher sur le scroll de la page
         start: "top top",
         end: "bottom bottom",
         scrub: true,
@@ -64,25 +69,26 @@ const ThreeScene = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
 
-      renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
     };
 
     window.addEventListener("resize", handleResize);
 
     // Nettoyage lors du démontage du composant
     return () => {
-      mountRef.current.removeChild(renderer.domElement);
+      renderer.dispose(); // Libérer les ressources du renderer
+      document.body.removeChild(renderer.domElement);
       window.removeEventListener("resize", handleResize);
-      // Supprimer l'animation GSAP associée
+      // Supprimer les animations GSAP
       ScrollTrigger.getAll().forEach((t) => t.kill());
       gsap.killTweensOf(cube.rotation);
     };
   }, []);
 
-  // Style pour permettre le scroll (hauteur de 200% de la vue)
-  return <div ref={mountRef} style={{ height: "200vh" }} />;
+  // Pas besoin de retourner un élément, le renderer est ajouté directement au body
+  return null;
 };
 
 export default ThreeScene;

@@ -8,43 +8,46 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
-  const textRef = useRef(null);
+  const sectionsRef = useRef([]);
 
   useEffect(() => {
-    // Animer l'opacité du texte en fonction du scroll
-    gsap.fromTo(
-      textRef.current,
-      { opacity: 1 },
-      {
-        opacity: 0,
-        scrollTrigger: {
-          trigger: textRef.current,
-          start: "top top",
-          end: "center top",
-          scrub: true,
-        },
-      }
-    );
+    sectionsRef.current.forEach((section, index) => {
+      gsap.fromTo(
+        section,
+        { opacity: 0 },
+        {
+          opacity: 1,
+          scrollTrigger: {
+            trigger: section,
+            start: "top center",
+            end: "bottom center",
+            scrub: true,
+          },
+        }
+      );
+    });
 
-    // Nettoyage lors du démontage du composant
+    // Nettoyage
     return () => {
       ScrollTrigger.getAll().forEach((t) => t.kill());
-      gsap.killTweensOf(textRef.current);
+      gsap.killTweensOf(sectionsRef.current);
     };
   }, []);
 
   return (
     <div className="relative">
-      <h1
-        ref={textRef}
-        className="fixed top-10 left-0 right-0 text-center text-4xl font-bold"
-      >
-        Bienvenue dans mon projet 3D
-      </h1>
       <ThreeScene />
-      <p className="absolute bottom-10 left-0 right-0 text-center text-2xl">
-        Merci d&apos;avoir scrollé !
-      </p>
+      <div className="flex flex-col items-center justify-center">
+        {[...Array(5)].map((_, i) => (
+          <section
+            key={i}
+            ref={(el) => (sectionsRef.current[i] = el)}
+            className="min-h-screen flex items-center justify-center"
+          >
+            <h2 className="text-4xl font-bold">Section {i + 1}</h2>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
