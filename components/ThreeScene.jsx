@@ -2,13 +2,19 @@
 
 import { useRef, useEffect } from "react";
 import * as THREE from "three";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const ThreeScene = () => {
   const mountRef = useRef(null);
 
   useEffect(() => {
-    // Initialisation de la scène, de la caméra et du renderer
+    // Initialisation de la scène
     const scene = new THREE.Scene();
+
+    // Initialisation de la caméra
     const camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
@@ -17,7 +23,8 @@ const ThreeScene = () => {
     );
     camera.position.z = 5;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Initialisation du renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     mountRef.current.appendChild(renderer.domElement);
 
@@ -31,34 +38,51 @@ const ThreeScene = () => {
     const animate = () => {
       requestAnimationFrame(animate);
 
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
+      // Vous pouvez laisser cette rotation ou la commenter si vous voulez que le scroll contrôle entièrement la rotation
+      // cube.rotation.x += 0.01;
+      // cube.rotation.y += 0.01;
 
       renderer.render(scene, camera);
     };
 
     animate();
 
-    // Gérer le redimensionnement de la fenêtre
-    window.addEventListener("resize", handleResize);
+    // Animer le cube en fonction du scroll
+    gsap.to(cube.rotation, {
+      x: Math.PI * 2, // Rotation complète sur l'axe X
+      y: Math.PI * 2, // Rotation complète sur l'axe Y
+      scrollTrigger: {
+        trigger: mountRef.current,
+        start: "top top",
+        end: "bottom bottom",
+        scrub: true,
+      },
+    });
 
-    function handleResize() {
+    // Gérer le redimensionnement de la fenêtre
+    const handleResize = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
 
       renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
-    }
+    };
+
+    window.addEventListener("resize", handleResize);
 
     // Nettoyage lors du démontage du composant
     return () => {
       mountRef.current.removeChild(renderer.domElement);
       window.removeEventListener("resize", handleResize);
+      // Supprimer l'animation GSAP associée
+      ScrollTrigger.getAll().forEach((t) => t.kill());
+      gsap.killTweensOf(cube.rotation);
     };
   }, []);
 
-  return <div ref={mountRef} />;
+  // Style pour permettre le scroll (hauteur de 200% de la vue)
+  return <div ref={mountRef} style={{ height: "200vh" }} />;
 };
 
 export default ThreeScene;
